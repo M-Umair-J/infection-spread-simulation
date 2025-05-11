@@ -4,10 +4,10 @@ import random
 import agent
 
 
-num_agents = 1000
+num_agents = 100
 recovery_time = 30
 initially_infected = 8
-Graph = networkx.watts_strogatz_graph(num_agents,7,0.3)
+Graph = networkx.watts_strogatz_graph(num_agents,10,0.03)
 agents = {}
 
 for i in Graph.nodes():
