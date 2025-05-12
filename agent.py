@@ -2,7 +2,7 @@ import random
 
 class Agent:
     base_infection_probability = 0.3
-    def __init__(self,id,age,immunity,mobility):
+    def __init__(self,id,age,immunity,mobility,cluster=None):
         self.id = id
         self.age = age
         self.status = "S"
@@ -10,6 +10,7 @@ class Agent:
         self.immunity = immunity
         self.mobility = mobility
         self.last_infected_timestep = -1
+        self.cluster = cluster
         self.neighbours = []
         
     def decide_to_infect_neighbours(self):
