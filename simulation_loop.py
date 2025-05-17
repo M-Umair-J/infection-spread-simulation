@@ -16,6 +16,8 @@ def run_visualization(agents, width=1024, height=768, fps=60):
     simulation_paused = False
     zoom_level = 1.0
     simulation_speed = 1
+    step_delay = 500  # milliseconds between steps 
+    last_step_time = 0
 
     #initialize infections
     num_initial_infected = int(len(agents) * initial_infection_rate)
@@ -64,12 +66,13 @@ def run_visualization(agents, width=1024, height=768, fps=60):
                 if event.key == pygame.K_SPACE:
                     simulation_paused = not(simulation_paused)
                 elif event.key == pygame.K_UP:
-                    simulation_speed = min(5, simulation_speed + 0.5)
+                    step_delay = max(50, step_delay - 50)  # Faster (lower delay)
                 elif event.key == pygame.K_DOWN:
-                    simulation_speed = max(0.1, simulation_speed - 0.5)
-
-            if not (simulation_paused):
-                for _ in range(int(simulation_speed)):
+                    step_delay = min(2000, step_delay + 50)  # Slower (higher delay)
+        current_time = pygame.time.get_ticks()
+        if not (simulation_paused):
+                #only update if enough time has passed
+                if current_time - last_step_time > step_delay / simulation_speed:
                     new_infections = []
                     #handling infections
                     for agent in agents.values():
@@ -93,6 +96,8 @@ def run_visualization(agents, width=1024, height=768, fps=60):
                                 if agent.id in base_positions:
                                     del base_positions[agent.id]
                     time_step += 1
+                    last_step_time = current_time
+                
          #drawing directly in main loop
         screen.fill((30, 30, 30))
         
@@ -133,127 +138,13 @@ def run_visualization(agents, width=1024, height=768, fps=60):
             screen.blit(font.render(text, True, (255,255,255)), (10, y))
             y += 20
 
+        #simulation speed control component
+        pygame.draw.rect(screen, (60, 60, 60), (10, height - 40, 200, 30))
+        pygame.draw.rect(screen, (100, 100, 100), (10, height - 40, int(step_delay/10), 30))
+        text = font.render(f"Simulation Speed: {1000/step_delay:.1f} steps/sec", True, (255, 255, 255))
+        screen.blit(text, (15, height - 35))
 
-                    # simulation_step()
-                    # draw_edges()
-                    # draw_nodes()
-                    # draw_ui()
         pygame.display.flip()
         clock.tick(fps)
 
     pygame.quit()
-
-    # def update_network():
-    #     nonlocal G
-    #     G = nx.Graph()
-    #     for aid, agent in agents.items():
-    #         if agent.status != "D":
-    #             G.add_node(aid)
-    #             for nid in agent.neighbours:
-    #                 if agents[nid].status != "D" and nid > aid:
-    #                     G.add_edge(aid, nid)
-
-    # def simulation_step():
-    #     """Advance the simulation by one time step"""
-    #     nonlocal time_step, status_counts
-    
-    #     # Process all agents
-    #     for agent in agents.values():
-    #         if agent.status == "D":
-    #             continue
-            
-    #         # Original agent logic
-    #         agent.start(agents, time_step, recovery_time)
-            
-    #         # Handle mortality after recovery period
-    #         if (agent.status == "I" and 
-    #             (time_step - agent.last_infected_timestep) >= recovery_time):
-    #             if random.random() < mortality_rate:
-    #                 # Remove from network
-    #                 for nid in agent.neighbours.copy():
-    #                     agents[nid].neighbours.discard(agent.id)
-    #                 agent.neighbours.clear()
-    #                 agent.status = "D"
-    #                 status_counts["I"] -= 1
-    #                 status_counts["D"] += 1
-    #                 update_network()
-
-    #     # Update counters
-    #     current_counts = {"S":0, "I":0, "R":0, "D":0}
-    #     for agent in agents.values():
-    #         current_counts[agent.status] += 1
-    #     status_counts.update(current_counts)
-        
-    #     time_step += 1
-
-    # def draw_edges():
-    #     """Draw edges using anti-aliased lines"""
-    #     for u, v in G.edges():
-    #         if u in agents and v in agents:
-    #             start_pos = (int(agents[u].pos[0]), int(agents[u].pos[1]))
-    #             end_pos = (int(agents[v].pos[0]), int(agents[v].pos[1]))
-    #             pygame.draw.aaline(screen, (150,150,150), start_pos, end_pos)
-
-    # def draw_nodes():
-    #     """Draw nodes with status-appropriate colors"""
-    #     for agent in agents.values():
-    #         if agent.status == "D":
-    #             color = (40, 40, 40)  # Dead (dark gray)
-    #         elif agent.status == "I":
-    #             color = (200, 0, 0)   # Infected (red)
-    #         elif agent.status == "R":
-    #             color = (0, 0, 200)   # Recovered (blue)
-    #         else:
-    #             color = (0, 200, 0)   # Susceptible (green)
-            
-    #         radius = max(1, int(5 * zoom_level))
-    #         pos = (int(agent.pos[0]), int(agent.pos[1]))
-    #         pygame.draw.circle(screen, color, pos, radius)
-
-    # def draw_ui():
-    #     """Draw simulation controls and stats"""
-    #     texts = [
-    #         f"Time: {time_step}",
-    #         f"Speed: {simulation_speed}x [Up/Down]",
-    #         f"Paused: {simulation_paused} [Space]",
-    #         f"S: {status_counts['S']}",
-    #         f"I: {status_counts['I']}",
-    #         f"R: {status_counts['R']}",
-    #         f"D: {status_counts['D']}"
-    #     ]
-    #     y = 10
-    #     for text in texts:
-    #         surf = font.render(text, True, (255,255,255))
-    #         screen.blit(surf, (10, y))
-    #         y += 20
-
-    # running = True
-    # while running:
-    #     # Handle input
-    #     for event in pygame.event.get():
-    #         if event.type == pygame.QUIT:
-    #             running = False
-    #         elif event.type == pygame.KEYDOWN:
-    #             if event.key == pygame.K_SPACE:
-    #                 simulation_paused = not simulation_paused
-    #             elif event.key == pygame.K_UP:
-    #                 simulation_speed = min(5, simulation_speed + 0.5)
-    #             elif event.key == pygame.K_DOWN:
-    #                 simulation_speed = max(0.1, simulation_speed - 0.5)
-        
-    #     # Update simulation
-    #     if not simulation_paused:
-    #         for _ in range(int(simulation_speed)):
-    #             simulation_step()
-    #             if status_counts["I"] == 0:
-    #                 simulation_paused = True
-
-    #     # Update display
-    #     screen.fill((30, 30, 30))
-    #     draw_edges()
-    #     draw_nodes()
-    #     draw_ui()
-    #     pygame.display.flip()
-    #     clock.tick(fps)
-
-    # pygame.quit()

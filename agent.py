@@ -19,13 +19,10 @@ class Agent:
 
     def decide_to_infect_neighbours(self):
         count_to_infect = int(len(self.neighbours) * self.mobility)
-        #convert set to list for sampling
         if len(self.neighbours) == 0 or count_to_infect <= 0:
             return []
-        #convert to sorted list
-        neighbors_list = sorted(self.neighbours)
-        #calculate actual number to sample 
-        sample_size = min(count_to_infect, len(neighbors_list))
+        neighbors_list = sorted(self.neighbours)#convert set to list for sampling
+        sample_size = min(count_to_infect, len(neighbors_list))#calculate actual number for sampling
         return random.sample(neighbors_list, sample_size)
     
     def attempt_to_infect_neighbour(self, neighbour_agent, timestep):
