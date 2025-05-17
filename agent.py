@@ -11,7 +11,7 @@ class Agent:
         self.mobility = mobility
         self.last_infected_timestep = -1
         self.cluster = cluster
-        self.neighbours = []
+        self.neighbours = set()
         
     def decide_to_infect_neighbours(self):
         count_to_infect = int(len(self.neighbours) * self.mobility)
