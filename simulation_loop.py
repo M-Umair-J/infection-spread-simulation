@@ -1,169 +1,134 @@
-# import pygame
-# import math
-# import random
-
-# pygame.init()
-
-
-# h = 786
-# w = 1024
-# screen = pygame.display.set_mode((w,h))
-# clock = pygame.time.Clock()
-# is_running = True
-
-
-
-# # def render_nodes(agents):
-# clusters=set({})
-# for node in agents.keys():
-#     clusters.add(agents[node].cluster)
-# c = len(clusters) # number of clusters
-
-# #creating cells for clusters
-# cols = math.ceil(math.sqrt(c * w / h))
-# rows = math.ceil(c / cols)
-# cell_w = w // cols
-# cell_h = h // rows
-# r_cluster = min(cell_w, cell_h) * 0.4 #setting size of cluster to 40% of the cell size assigned for the cluster
-# r_node = max(3, int(r_cluster / math.sqrt(len(agents) / c) / 2)) #propotionate node radius of node inside the cluster
-        
-#     #calculate each cluster center
-# cluster_centers = {}
-# for idx, cid in enumerate(clusters):
-#     row = idx // cols
-#     col = idx % cols
-#     cx = col * cell_w + cell_w // 2
-#     cy = row * cell_h + cell_h // 2
-#     cluster_centers[cid] = (cx, cy)
-    
-# for cid in clusters:
-#     members = [a for a in agents.values() if a.cluster == cid]
-#     M = len(members)
-#     if M == 0: continue
-#     delta = 2 * math.pi / M
-#     cx, cy = cluster_centers[cid]
-#     for i, ag in enumerate(members):
-#         theta = i * delta
-#         # for a filled‐circle effect, randomize radius
-#         rr = random.uniform(0.3 * r_cluster, r_cluster)
-#         x = cx + rr * math.cos(theta)
-#         y = cy + rr * math.sin(theta)
-#         ag.pos = (int(x), int(y))
-
-# def draw_edges(surface, agents, color=(150,150,150)):
-#     for ag in agents.values():
-#         for nb in ag.neighbours:
-#             # draw each edge only once
-#             if ag.id < nb:
-#                 pygame.draw.line(surface, color, ag.pos, agents[nb].pos, 1)
-
-# def draw_nodes(surface, agents):
-#     for ag in agents.values():
-#         # pick color by status if you like, here all green
-#         pygame.draw.circle(surface, (0,200,0), ag.pos, r_node)
-
-
-# def draw_comp(agents):
-#     running = True
-#     while running:
-#         for ev in pygame.event.get():
-#             if ev.type == pygame.QUIT:
-#                 running = False
-
-#         screen.fill((30,30,30))
-#         draw_edges(screen, agents)
-#         draw_nodes(screen, agents)
-
-#         pygame.display.flip()
-#         clock.tick(60)
-
-# pygame.quit()
-
-#     # def render_edges(agents):
-
-
-# # def draw_components(agents):
-
-# #     while is_running:
-# #         for event in pygame.event.get():
-# #             if event.type == pygame.QUIT:
-# #                 is_running == False
-        
-# #         pygame.display.flip()
-# #         clock.tick(90)
-# #     pygame.quit()
-
-
-
 import pygame
 import math
 import random
+import networkx as nx
 
 def run_visualization(agents, width=1024, height=786, fps=60):
     pygame.init()
     screen = pygame.display.set_mode((width, height))
-    clock  = pygame.time.Clock()
-
+    clock = pygame.time.Clock()
     
-    clusters = sorted({ag.cluster for ag in agents.values()})
-    C = len(clusters)
-
+    # Define node radius
+    r_node = 5  # You can adjust this value as needed
     
-    cols = math.ceil(math.sqrt(C * width / height))
-    rows = math.ceil(C / cols)
-    cell_w = width  // cols
-    cell_h = height // rows
-
+    # Create NetworkX graph from your agent structure - simplified edge creation
+    G = nx.Graph()  # Using Graph instead of DiGraph ensures edges are unique
     
-    r_cluster = min(cell_w, cell_h) * 0.4
-    avg_per_cluster = len(agents) / C if C>0 else 1
-    r_node = max(3, int(r_cluster / math.sqrt(avg_per_cluster) / 2))
-
+    for agent_id, agent_obj in agents.items():
+        G.add_node(agent_id, cluster=agent_obj.cluster)
     
-    cluster_centers = {}
-    for idx, cid in enumerate(clusters):
-        row = idx // cols
-        col = idx % cols
-        cx = col * cell_w + cell_w // 2
-        cy = row * cell_h + cell_h // 2
-        cluster_centers[cid] = (cx, cy)
-
+    for agent_id, agent_obj in agents.items():
+        for neighbor in agent_obj.neighbours:
+            G.add_edge(agent_id, neighbor)  # NetworkX Graph automatically handles duplicates
+            
     
-    for cid in clusters:
-        members = [ag for ag in agents.values() if ag.cluster == cid]
-        M = len(members)
-        if M == 0:
-            continue
-        delta = 2 * math.pi / M
-        cx, cy = cluster_centers[cid]
-        for i, ag in enumerate(members):
-            theta = i * delta
-            rr = random.uniform(0.3 * r_cluster, r_cluster)
-            x = cx + rr * math.cos(theta)
-            y = cy + rr * math.sin(theta)
-            ag.pos = (int(x), int(y))
-
+    # Apply force-directed layout (spring layout)
+    positions = nx.spring_layout(G, iterations=100)
     
+    # Scale positions to fit screen dimensions
+    max_x = max(pos[0] for pos in positions.values())
+    min_x = min(pos[0] for pos in positions.values())
+    max_y = max(pos[1] for pos in positions.values())
+    min_y = min(pos[1] for pos in positions.values())
+    
+    # Store base positions
+    base_positions = {}
+    for agent_id, pos in positions.items():
+        scaled_x = (pos[0] - min_x) / (max_x - min_x) * (width - 100) + 50
+        scaled_y = (pos[1] - min_y) / (max_y - min_y) * (height - 100) + 50
+        base_positions[agent_id] = (scaled_x, scaled_y)
+        agents[agent_id].pos = (int(scaled_x), int(scaled_y))
+    
+    # Zoom and pan variables
+    zoom_level = 1.0
+    
+    # Update positions based on zoom level and mouse position
+    def update_agent_positions(mouse_x, mouse_y, zoom_delta):
+        nonlocal zoom_level
+        old_zoom = zoom_level
+        zoom_level += zoom_delta
+        
+        # Limit zoom level
+        if zoom_level < 0.2:
+            zoom_level = 0.2
+        elif zoom_level > 10.0:
+            zoom_level = 10.0
+            
+        # Calculate zoom factor
+        zoom_factor = zoom_level / old_zoom
+        
+        for agent_id, base_pos in base_positions.items():
+            # Get current position
+            current_pos = agents[agent_id].pos
+            
+            # Calculate new position zoomed around mouse pointer
+            dx = current_pos[0] - mouse_x
+            dy = current_pos[1] - mouse_y
+            
+            new_x = mouse_x + dx * zoom_factor
+            new_y = mouse_y + dy * zoom_factor
+            
+            # Update agent position
+            agents[agent_id].pos = (int(new_x), int(new_y))
+    
+    # Draw functions
     def draw_edges():
-        for ag in agents.values():
-            for nb in ag.neighbours:
-                if ag.id < nb:
-                    pygame.draw.line(screen, (150,150,150), ag.pos, agents[nb].pos, 1)
+        for u, v in G.edges():
+            pygame.draw.aaline(screen, (150,150,150), agents[u].pos, agents[v].pos)
 
     def draw_nodes():
         for ag in agents.values():
-            pygame.draw.circle(screen, (0,200,0), ag.pos, r_node)
-
+            # Color nodes based on status
+            if hasattr(ag, 'status'):
+                if ag.status == "S":  # Susceptible
+                    color = (0, 200, 0)  # Green
+                elif ag.status == "I":  # Infected
+                    color = (200, 0, 0)  # Red
+                elif ag.status == "R":  # Recovered
+                    color = (0, 0, 200)  # Blue
+                else:
+                    color = (200, 200, 0)  # Yellow for unknown
+            else:
+                color = (0, 200, 0)  # Default green
+            
+            # Adjust node size with zoom
+            node_radius = int(r_node * zoom_level)
+            if node_radius < 1:
+                node_radius = 1
+                
+            pygame.draw.circle(screen, color, ag.pos, node_radius)
+    
+    # Draw instructions
+    font = pygame.font.SysFont('Arial', 16)
+    def draw_instructions():
+        instructions = [
+            "Mouse Wheel: Zoom In/Out",
+            f"Zoom Level: {zoom_level:.2f}x"
+        ]
+        
+        for i, text in enumerate(instructions):
+            text_surf = font.render(text, True, (255, 255, 255))
+            screen.blit(text_surf, (10, 10 + i * 20))
     
     running = True
     while running:
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
                 running = False
+            elif ev.type == pygame.MOUSEWHEEL:
+                # Get mouse position
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                
+                # Calculate zoom delta
+                zoom_delta = 0.1 * ev.y  # ev.y is positive when scrolling up
+                
+                # Update positions with new zoom level centered on mouse
+                update_agent_positions(mouse_x, mouse_y, zoom_delta)
 
         screen.fill((30,30,30))
         draw_edges()
         draw_nodes()
+        draw_instructions()
 
         pygame.display.flip()
         clock.tick(fps)

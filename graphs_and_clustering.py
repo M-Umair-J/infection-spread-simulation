@@ -16,9 +16,8 @@ def create_graph():
             agents[i] = agent.Agent(i,age,immunity,mobility,j)
         for k in range(num_of_agents_in_cluster * j, j * num_of_agents_in_cluster + num_of_agents_in_cluster):
             for x in range(num_of_agents_in_cluster * j, j * num_of_agents_in_cluster + num_of_agents_in_cluster):
-                random_num = random.randint(1,10)
                 if k != x:
-                    if random_num < 5: #prob of having an edge inside cluster is 50%
+                    if random.random() <= 0.15: #prob of having an edge inside cluster is 15%
                         agents[k].neighbours.add(x)
                         agents[x].neighbours.add(k)
 
@@ -26,18 +25,17 @@ def create_graph():
     superspreaders= []
     for j in range(int(total_population/num_of_agents_in_cluster)):
         for i in range(num_of_agents_in_cluster * j, j * num_of_agents_in_cluster + num_of_agents_in_cluster):
-            random_num = random.randint(1,10)
-            if random_num <= 1:#prob of having edge outside of cluster is 10%
+            if random.random() <= 0.1:#prob of having edge outside of cluster is 10%
                 random_num = random.randint(0,int(total_population/num_of_agents_in_cluster)-1)
                 while(random_num == j):
                     random_num = random.randint(0,int(total_population/num_of_agents_in_cluster)-1)
                 
                 for k in range(num_of_agents_in_cluster * random_num, random_num * num_of_agents_in_cluster + num_of_agents_in_cluster):
-                    prob = random.randint(1,10)
-                    if prob <= 1:
+                    prob = random.random()
+                    if prob <= 0.1: #prob of having edge outside of cluster is 10%
                         agents[i].neighbours.add(k)
                         agents[k].neighbours.add(i)
-                    if prob >= 5:
+                    if prob >= 0.5: #prob of having edge outside of cluster is 50%
                         break
 
 
@@ -62,11 +60,15 @@ def create_graph():
 
     # print(superspreaders)
     for i in superspreaders:
+            max_connection_limit = 35
+            current_connection_count = 0
             for j in range(total_population):
-                random_num = random.randint(1,100)
-                if i !=j and (random_num<=40):
+                if i !=j and random.random() <= 0.03: #superspreaders have 3% chance of having an edge with any other node
+                    if(current_connection_count>=max_connection_limit): #30 is the maximum number of people that the superspreader can connect to
+                        break
                     agents[i].neighbours.add(j)
                     agents[j].neighbours.add(i)
+                    current_connection_count+=1
 
 
     return agents
