@@ -11,7 +11,7 @@ def create_graph():
     for j in range(int(total_population/num_of_agents_in_cluster)):
         for i in range(num_of_agents_in_cluster * j, j * num_of_agents_in_cluster + num_of_agents_in_cluster):
             mobility = random.uniform(0.3,1)
-            immunity = 0.1
+            immunity = random.uniform(0.1, 0.9)
             age = random.randint(0,100)
             agents[i] = agent.Agent(i,age,immunity,mobility,j)
         for k in range(num_of_agents_in_cluster * j, j * num_of_agents_in_cluster + num_of_agents_in_cluster):
