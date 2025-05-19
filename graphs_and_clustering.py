@@ -17,7 +17,7 @@ def create_graph():
         for k in range(num_of_agents_in_cluster * j, j * num_of_agents_in_cluster + num_of_agents_in_cluster):
             for x in range(num_of_agents_in_cluster * j, j * num_of_agents_in_cluster + num_of_agents_in_cluster):
                 if k != x:
-                    if random.random() <= 0.15: #prob of having an edge inside cluster is 15%
+                    if random.random() <= 0.10: #prob of having an edge inside cluster is 10%
                         agents[k].neighbours.add(x)
                         agents[x].neighbours.add(k)
 
@@ -25,18 +25,18 @@ def create_graph():
     superspreaders= []
     for j in range(int(total_population/num_of_agents_in_cluster)):
         for i in range(num_of_agents_in_cluster * j, j * num_of_agents_in_cluster + num_of_agents_in_cluster):
-            if random.random() <= 0.1:#prob of having edge outside of cluster is 10%
-                random_num = random.randint(0,int(total_population/num_of_agents_in_cluster)-1)
+            if random.random() <= 0.2:#prob of having edge outside of cluster is 20%
+                random_num = random.randint(0,int(total_population/num_of_agents_in_cluster)-1)#randomly select a cluster
                 while(random_num == j):
                     random_num = random.randint(0,int(total_population/num_of_agents_in_cluster)-1)
                 
                 for k in range(num_of_agents_in_cluster * random_num, random_num * num_of_agents_in_cluster + num_of_agents_in_cluster):
                     prob = random.random()
-                    if prob <= 0.1: #prob of having edge outside of cluster is 10%
+                    if prob < 0.05: #prob of having edge outside of cluster with every node in the selected cluster is 5%
                         agents[i].neighbours.add(k)
                         agents[k].neighbours.add(i)
-                    if prob >= 0.5: #prob of having edge outside of cluster is 50%
-                        break
+                    # if prob >= 0.5: #prob of having edge outside of cluster is 50%
+                    #     break
 
 
 
@@ -54,13 +54,13 @@ def create_graph():
 
 
     for i in range(total_population):
-        random_num = random.randint(1,100)
-        if random_num == 2: #prob of having a superspreader in the population is 2%
+        random_num = random.random()
+        if random_num < 0.001: #prob of having a superspreader in the population is 0.1%
             superspreaders.append(i)
 
     # print(superspreaders)
     for i in superspreaders:
-            max_connection_limit = 35
+            max_connection_limit = 20
             current_connection_count = 0
             for j in range(total_population):
                 if i !=j and random.random() <= 0.03: #superspreaders have 3% chance of having an edge with any other node
@@ -70,6 +70,20 @@ def create_graph():
                     agents[j].neighbours.add(i)
                     current_connection_count+=1
 
+    for i in range(total_population):
+        if len(agents[i].neighbours) == 0:
+            cluster_id = agents[i].cluster
+            cluster_start = cluster_id * num_of_agents_in_cluster
+            cluster_end = cluster_start + num_of_agents_in_cluster
+            neigbours_to_force_edge_with = []
+            for j in range(cluster_start, cluster_end):
+                if j != i:
+                    neigbours_to_force_edge_with.append(j)
+            
+            if neigbours_to_force_edge_with:
+                random_num = random.choice(neigbours_to_force_edge_with)
+                agents[i].neighbours.add(random_num)
+                agents[random_num].neighbours.add(i)
 
     return agents
     # for i in agents.keys():

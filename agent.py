@@ -2,20 +2,16 @@ import random
 
 class Agent:
     base_infection_probability = 0.3
-    def __init__(self,id,age,immunity,mobility,cluster=None):
+    def __init__(self, id, age, immunity, mobility, cluster=None):
         self.id = id
         self.age = age
-        self.status = "S"
-        # self.infected_already = False
         self.immunity = immunity
         self.mobility = mobility
-        self.last_infected_timestep = -1
         self.cluster = cluster
+        self.status = "S"  # S: susceptible, I: infected, R: recovered, D: dead
         self.neighbours = set()
-        
-    # def decide_to_infect_neighbours(self):
-    #     count_to_infect = int(len(self.neighbours) * self.mobility)
-    #     return random.sample(self.neighbours,min(count_to_infect,len(self.neighbours)))
+        self.last_infected_timestep = -1
+        self.recovery_time = random.randint(10, 16)  # Random recovery time between 10-16 days
 
     def decide_to_infect_neighbours(self):
         count_to_infect = int(len(self.neighbours) * self.mobility)
@@ -27,8 +23,30 @@ class Agent:
     
     def attempt_to_infect_neighbour(self, neighbour_agent, timestep):
         if self.status == "I" and neighbour_agent.status == "S":
-            age_factor = 0.2 if 20 < self.age < 40 else 0.4
-            prob = self.base_infection_probability * age_factor * (1 - neighbour_agent.immunity)
+            # Base probability
+            base_prob = 0.15  # Lower base probability
+            
+            # Age-based risk factors for infection transmission
+            if self.age < 18:
+                transmitter_factor = 0.7  # Children may transmit less
+            elif 18 <= self.age < 60:
+                transmitter_factor = 1.0  # Adults normal transmission
+            else:
+                transmitter_factor = 0.8  # Elderly may have fewer contacts but higher viral load
+                
+            # Age-based susceptibility of receiver
+            if neighbour_agent.age < 18:
+                receiver_factor = 0.6  # Children may be less susceptible
+            elif 18 <= neighbour_agent.age < 60:
+                receiver_factor = 1.0  # Adults normal susceptibility
+            else:
+                receiver_factor = 1.4  # Elderly more susceptible
+                
+            # Immunity factor (stronger effect)
+            immunity_factor = 1 - (neighbour_agent.immunity * neighbour_agent.immunity)  # Square makes immunity more significant
+            
+            # Calculate final probability
+            prob = base_prob * transmitter_factor * receiver_factor * immunity_factor
             
             if random.random() < prob:
                 neighbour_agent.infect(timestep)
@@ -46,12 +64,8 @@ class Agent:
             statuses_list["I"] -= 1 
             statuses_list["R"] += 1
     
-    def update_status(self,agents, timestep, recovery_time, mortality_rate):
-        if self.status == "I" and (timestep - self.last_infected_timestep) >= recovery_time:
-            if random.random() < mortality_rate:
-                self.status = "D"
-                for nodes in self.neighbours.copy():#remove from network
-                    agents[nodes].neighbours.discard(self.id)
-                self.neighbours.clear()
-            else:
-                self.status = "R"
+    def update_status(self, agents, timestep):
+        if self.status == "I" and (timestep - self.last_infected_timestep) >= self.recovery_time:
+            # Agent has reached their recovery time
+            return True
+        return False
