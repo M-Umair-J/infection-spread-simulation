@@ -5,12 +5,19 @@ import matplotlib.pyplot as plt
 import multiprocessing
 from multiprocessing import Queue
 import numpy as np
+import platform
 
 # Define the plotting process function
 def run_plot_process(data_queue):
     """Run the plotting process separately from the main simulation"""
     import matplotlib
-    matplotlib.use('TkAgg')  # Set interactive backend inside process
+    
+    # Use a better backend for macOS
+    if platform.system() == 'Darwin':  # macOS
+        matplotlib.use('MacOSX')  # Better for Mac
+    else:
+        matplotlib.use('TkAgg')  # Use TkAgg for other platforms
+        
     import matplotlib.pyplot as plt
     
     # Set up the figure
@@ -85,6 +92,14 @@ def run_plot_process(data_queue):
     plt.close(fig)
 
 def run_visualization(agents, width=1024, height=768, fps=60):
+    # Set multiprocessing start method to spawn for all platforms, especially important for macOS
+    if platform.system() == 'Darwin' and multiprocessing.get_start_method() != 'spawn':
+        try:
+            multiprocessing.set_start_method('spawn', force=True)
+        except RuntimeError:
+            # If already set and we can't force, at least we tried
+            pass
+            
     number_of_nodes = len(agents)
     # Initialize pygame
     pygame.init()
