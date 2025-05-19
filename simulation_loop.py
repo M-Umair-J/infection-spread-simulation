@@ -103,7 +103,15 @@ def run_visualization(agents, width=1024, height=768, fps=60):
     number_of_nodes = len(agents)
     # Initialize pygame
     pygame.init()
-    screen = pygame.display.set_mode((width, height))
+    
+    # Get the current screen info for a large window
+    screen_info = pygame.display.Info()
+    width, height = screen_info.current_w - 100, screen_info.current_h - 100  # Slightly smaller than screen
+    
+    # Create a resizable window (will have minimize/maximize buttons)
+    pygame.display.set_caption("Infection Spread Simulation")
+    screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
+    
     clock = pygame.time.Clock()
     font = pygame.font.SysFont('Arial', 16)
 
@@ -274,6 +282,12 @@ def run_visualization(agents, width=1024, height=768, fps=60):
                     step_delay = max(50, step_delay - 50)  # Faster (lower delay)
                 elif event.key == pygame.K_DOWN:
                     step_delay = min(2000, step_delay + 50)  # Slower (higher delay)
+                elif event.key == pygame.K_ESCAPE:
+                    running = False  # Exit on ESC key
+            elif event.type == pygame.VIDEORESIZE:
+                # Handle window resize
+                width, height = event.size
+                screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
             elif event.type == pygame.MOUSEWHEEL:
                 # Handle zoom with mouse wheel
                 mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -482,7 +496,7 @@ def run_visualization(agents, width=1024, height=768, fps=60):
         help_panel_x = width - 270  # Position from right edge
         help_panel_y = 10           # Position from top edge
         help_panel_width = 250
-        help_panel_height = 80      # Slightly increased height for better spacing
+        help_panel_height = 100     # Increased height to fit all controls
         
         # Background
         help_panel = pygame.Surface((help_panel_width, help_panel_height), pygame.SRCALPHA)
@@ -498,7 +512,8 @@ def run_visualization(agents, width=1024, height=768, fps=60):
             "Controls:",
             "Space - Pause/Resume",
             "Up/Down - Adjust Speed",
-            "Mouse Wheel - Zoom In/Out"
+            "Mouse Wheel - Zoom In/Out",
+            "ESC - Exit"
         ]
         
         y = help_panel_y + 10
