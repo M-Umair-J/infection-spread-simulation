@@ -251,7 +251,7 @@ def run_visualization(agents, width=1024, height=768, fps=60):
             G.add_edge(agent_id, neighbor)
 
     # Calculating initial layout
-    positions = nx.spring_layout(G, iterations=50)
+    positions = nx.spring_layout(G, iterations=100)
     max_x = max(pos[0] for pos in positions.values()) or 1
     min_x = min(pos[0] for pos in positions.values()) or 0
     max_y = max(pos[1] for pos in positions.values()) or 1
@@ -284,6 +284,15 @@ def run_visualization(agents, width=1024, height=768, fps=60):
                     step_delay = min(2000, step_delay + 50)  # Slower (higher delay)
                 elif event.key == pygame.K_ESCAPE:
                     running = False  # Exit on ESC key
+                elif event.key == pygame.K_f:
+                    # Toggle between fullscreen and windowed mode
+                    if screen.get_flags() & pygame.FULLSCREEN:
+                        # Switch to windowed
+                        screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
+                    else:
+                        # Switch to fullscreen
+                        screen = pygame.display.set_mode((screen_info.current_w, screen_info.current_h), pygame.FULLSCREEN)
+                        width, height = screen_info.current_w, screen_info.current_h
             elif event.type == pygame.VIDEORESIZE:
                 # Handle window resize
                 width, height = event.size
@@ -496,7 +505,7 @@ def run_visualization(agents, width=1024, height=768, fps=60):
         help_panel_x = width - 270  # Position from right edge
         help_panel_y = 10           # Position from top edge
         help_panel_width = 250
-        help_panel_height = 100     # Increased height to fit all controls
+        help_panel_height = 100      # Slightly increased height fno zor better spacing
         
         # Background
         help_panel = pygame.Surface((help_panel_width, help_panel_height), pygame.SRCALPHA)
