@@ -28,19 +28,19 @@ class Agent:
             
             # Age-based risk factors for infection transmission
             if self.age < 18:
-                transmitter_factor = 0.7  # Children may transmit less
+                transmitter_factor = 0.8  # Children may transmit less
             elif 18 <= self.age < 60:
                 transmitter_factor = 1.0  # Adults normal transmission
             else:
-                transmitter_factor = 0.8  # Elderly may have fewer contacts but higher viral load
+                transmitter_factor = 0.9  # Elderly may have fewer contacts but higher viral load
                 
             # Age-based susceptibility of receiver
             if neighbour_agent.age < 18:
-                receiver_factor = 0.6  # Children may be less susceptible
+                receiver_factor = 0.7  # Children may be less susceptible
             elif 18 <= neighbour_agent.age < 60:
                 receiver_factor = 1.0  # Adults normal susceptibility
             else:
-                receiver_factor = 1.4  # Elderly more susceptible
+                receiver_factor = 1.5  # Elderly more susceptible
                 
             # Immunity factor (stronger effect)
             immunity_factor = 1 - (neighbour_agent.immunity * neighbour_agent.immunity)  # Square makes immunity more significant

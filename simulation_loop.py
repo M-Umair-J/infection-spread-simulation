@@ -119,7 +119,7 @@ def run_visualization(agents, width=1024, height=768, fps=60):
     initial_infection_rate = 0.05
     min_recovery_time = 10
     max_recovery_time = 16
-    mortality_rate = 0.01
+    mortality_rate = 0.05
     time_step = 0
     simulation_paused = False
     zoom_level = 1.0
